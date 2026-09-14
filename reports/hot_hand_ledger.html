@@ -1,0 +1,373 @@
+<title>Hot Hand Ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f3f5f2; --surface:#fcfcfb; --ink:#101211; --ink-2:#4e524f; --muted:#868a86;
+  --grid:#e0e3de; --axis:#c1c5c0; --border:rgba(16,18,17,.10);
+  --obs:#2a78d6; --obs-soft:#cde2fb; --null:#eb6834; --null-soft:#fbd9cb;
+  --miss:#b9bdb8; --good:#006300; --bad:#c23636;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111312; --surface:#1a1c1b; --ink:#f4f5f3; --ink-2:#c0c4c0; --muted:#8b8f8b;
+    --grid:#2a2d2b; --axis:#3b3f3c; --border:rgba(255,255,255,.10);
+    --obs:#3987e5; --obs-soft:#1c3a63; --null:#d95926; --null-soft:#5a2a17;
+    --miss:#4a4e4b; --good:#3fbf3f; --bad:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111312; --surface:#1a1c1b; --ink:#f4f5f3; --ink-2:#c0c4c0; --muted:#8b8f8b;
+  --grid:#2a2d2b; --axis:#3b3f3c; --border:rgba(255,255,255,.10);
+  --obs:#3987e5; --obs-soft:#1c3a63; --null:#d95926; --null-soft:#5a2a17;
+  --miss:#4a4e4b; --good:#3fbf3f; --bad:#e66767;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
+header{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:44px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(44px,7vw,72px);line-height:.95;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{max-width:64ch;font-size:18px;color:var(--ink-2);margin:0}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin:28px 0 0}
+.strip>div{background:var(--surface);padding:14px 16px}
+.strip .n{font-family:var(--display);font-weight:600;font-size:38px;line-height:1;color:var(--ink)}
+.strip .l{font-size:13px;color:var(--muted);margin-top:4px}
+@media (max-width:640px){.strip{grid-template-columns:repeat(2,1fr)}}
+section{margin:56px 0 0}
+h2{font-family:var(--display);font-weight:600;font-size:34px;line-height:1.05;margin:0 0 6px;text-wrap:balance}
+h2 .k{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;margin-bottom:8px}
+h3{font-family:var(--display);font-weight:600;font-size:22px;margin:28px 0 8px}
+p{max-width:66ch;margin:0 0 14px}
+p.wide{max-width:none}
+strong{font-weight:600}
+.fig{background:var(--surface);border:1px solid var(--border);padding:18px 18px 12px;margin:20px 0}
+.fig .t{font-weight:600;font-size:15px;margin:0 0 2px}
+.fig .s{font-size:13px;color:var(--muted);margin:0 0 12px}
+.fig svg{width:100%;height:auto;display:block;overflow:visible}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin:10px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:14px;height:14px;display:inline-block;border-radius:2px}
+.legend i.line{height:0;border-top:2px dashed var(--ink-2);width:18px;border-radius:0}
+.callout{border-left:3px solid var(--obs);padding:4px 0 4px 16px;margin:20px 0;color:var(--ink-2);max-width:66ch}
+.callout.warn{border-color:var(--null)}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto;margin:16px 0}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--axis);font-weight:500}
+td{padding:8px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+td.n,th.n{text-align:right}
+td.mono{font-family:var(--mono);font-size:13px;letter-spacing:.04em}
+.seqstrip{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0 4px}
+.seqstrip .sh{width:34px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;position:relative;cursor:default}
+.seqstrip .sq{width:26px;height:26px;border-radius:3px;border:2px solid var(--miss);background:transparent}
+.seqstrip .sq.made{background:var(--obs);border-color:var(--obs)}
+.seqstrip .idx{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.seqstrip .sh.q .sq{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--null)}
+.seqstrip .sh.qm .sq{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink-2)}
+.seqstrip .sh:hover .tip,.seqstrip .sh:focus-within .tip{display:block}
+.tip{display:none;position:absolute;bottom:52px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:4px;white-space:nowrap;z-index:5;pointer-events:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;font-size:14px;font-variant-numeric:tabular-nums;margin:8px 0}
+.kv b{font-weight:500;color:var(--ink-2)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.tt{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:4px;display:none;z-index:10;white-space:nowrap}
+.foot{margin-top:56px;font-size:13px;color:var(--muted);border-top:1px solid var(--axis);padding-top:14px}
+code{font-family:var(--mono);font-size:.92em}
+ul{max-width:66ch;padding-left:20px}
+li{margin:4px 0}
+:focus-visible{outline:2px solid var(--obs);outline-offset:2px}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">NBA field goals · 2022-23 to 2025-26 · regular season and playoffs</div>
+  <h1>Does the hot hand show up in the box score?</h1>
+  <p class="lede">A working ledger of the hot hand analysis so far: what the data is, why the obvious test is broken, how the permutation test fixes it, and what four seasons of play-by-play say about Jokić and 304 other players.</p>
+  <div class="strip" id="strip"></div>
+</header>
+
+<section id="data">
+  <h2><span class="k">1 · The data</span>930,133 shots, in the order they happened</h2>
+  <p>Every field goal attempt from the official play-by-play feed, ordered by game clock, with the shooter, outcome, distance, shot value, whether it was assisted, the score before the shot, and the shooter's own streak entering it. Free throws are excluded.</p>
+  <div class="tablewrap"><table id="totals"></table></div>
+  <p>Two limits of the source matter for anything downstream. Assists are only credited on made shots, so <code>assisted</code> can describe makes but never predict them. And a distance of 0 on a three-pointer means missing, not a heave from under the rim.</p>
+</section>
+
+<section id="bias">
+  <h2><span class="k">2 · The trap</span>Comparing to the average finds a cold hand that isn't there</h2>
+  <p>The natural test is "hit rate after three straight makes versus the player's overall rate." That test is biased, and the bias points the wrong way. Take a fair coin flipped three times, and ask what fraction of flips that follow a heads are also heads:</p>
+  <div class="tablewrap"><table>
+    <tr><th>sequence</th><th>flips after an H</th><th class="n">fraction heads</th></tr>
+    <tr><td class="mono">T T T</td><td>none</td><td class="n">–</td></tr>
+    <tr><td class="mono">T T H</td><td>none</td><td class="n">–</td></tr>
+    <tr><td class="mono">T H T</td><td>T</td><td class="n">0</td></tr>
+    <tr><td class="mono">H T T</td><td>T</td><td class="n">0</td></tr>
+    <tr><td class="mono">T H H</td><td>H</td><td class="n">1</td></tr>
+    <tr><td class="mono">H T H</td><td>T</td><td class="n">0</td></tr>
+    <tr><td class="mono">H H T</td><td>H, T</td><td class="n">½</td></tr>
+    <tr><td class="mono">H H H</td><td>H, H</td><td class="n">1</td></tr>
+  </table></div>
+  <p>Averaging the six defined fractions gives 5/12, about 42%, for a coin that is exactly 50%. Pooling all eight counted flips gives 4 of 8, exactly 50%. Both are correct arithmetic. The difference is that a real player is <em>one</em> sequence, so what you observe is one fraction, and its expected value is the biased 42%, not the pooled 50%.</p>
+  <p>Each make you spend defining "after k makes" is a make no longer available for the next shot. In short sequences with a fixed number of makes, that pulls the conditional rate down. It shrinks with sequence length and grows with k.</p>
+  <div class="fig">
+    <p class="t">A 45% shooter with no hot hand, 20 shots per game, 100,000 simulated games</p>
+    <p class="s">Per-game hit rate on shots following k straight makes, averaged across games. Nothing here is a hot or cold hand. It is pure selection.</p>
+    <svg id="simchart" viewBox="0 0 900 300"></svg>
+    <div class="legend"><span><i style="background:var(--obs)"></i>measured rate after k makes</span><span><i class="line"></i>true make probability, 45%</span></div>
+  </div>
+  <p>This is what Gilovich, Vallone and Tversky's 1985 study measured, on 100-shot controlled sequences. Their "no difference" was in fact several points above what a coin would show. Miller and Sanjurjo's 2018 correction found a hot hand of roughly 11 to 13 points in that same data, in a no-defense setting.</p>
+</section>
+
+<section id="null">
+  <h2><span class="k">3 · The fix</span>Shuffle the player's own shots and see what chance produces</h2>
+  <p>Instead of comparing to the average, compare to what a no-hot-hand version of the same player would produce. Write each of the player's shot outcomes on a card, shuffle the cards within each game, deal them back out, and recompute the statistic. Repeat thousands of times. The pile of results is the null distribution. It carries the same finite-sequence bias as the real data, because it has the same number of makes in the same number of games. Only the order is gone.</p>
+  <h3>Jokić, opening night 2023-24, Nuggets 119 Lakers 107</h3>
+  <p>His 22 field goal attempts in order. Filled squares are makes. A ring marks the shots that followed two straight makes; a grey ring marks those that followed two straight misses. Hover a shot for its details.</p>
+  <div class="fig">
+    <div class="seqstrip" id="seq"></div>
+    <div class="legend"><span><i style="background:var(--obs)"></i>make</span><span><i style="border:2px solid var(--miss);background:transparent;width:10px;height:10px"></i>miss</span><span><i style="background:transparent;box-shadow:0 0 0 2px var(--null);width:10px;height:10px;margin:2px"></i>follows 2 makes</span><span><i style="background:transparent;box-shadow:0 0 0 2px var(--ink-2);width:10px;height:10px;margin:2px"></i>follows 2 misses</span></div>
+    <div class="kv" id="gamekv"></div>
+  </div>
+  <p>The observed rate after two makes is 7 of 9. Now shuffle those 12 makes and 10 misses within the game, 20,000 times:</p>
+  <div class="fig">
+    <p class="t">Null distribution for one game: rate after 2 straight makes, 20,000 within-game shuffles</p>
+    <p class="s">Only 9 shots qualify in the real ordering, so the null is wide and lumpy. The shuffled mean sits well below his 54.5% game average.</p>
+    <svg id="gamehist" viewBox="0 0 900 320"></svg>
+    <div class="legend"><span><i style="background:var(--null)"></i>shuffled outcomes</span><span><i style="background:var(--obs)"></i>observed, 77.8%</span><span><i class="line"></i>game FG%, 54.5%</span></div>
+  </div>
+  <div class="callout warn">The null mean is 48%, six points <em>under</em> his 54.5% average, from nothing but shuffling. That gap is the bias from section 2, computed for his exact numbers. Measured against it, his 78% sits in the top 4.5% of shuffles. One game is far too little to conclude anything, but the mechanics are the same at any scale.</div>
+</section>
+
+<section id="jokic">
+  <h2><span class="k">4 · Four seasons of Jokić</span>No hot hand, and the benchmark flips direction</h2>
+  <p>The same test on all of his shots from 2022-23 through 2025-26, conditioning on three straight makes and three straight misses, with 5,000 within-game shuffles.</p>
+  <div class="strip" id="jstrip"></div>
+  <div class="fig" style="margin-top:16px">
+    <p class="t">Null distributions, 5,000 within-game shuffles of Jokić's 5,976 shots</p>
+    <p class="s">Top: hit rate on the 931 shots following 3 straight makes. Bottom: hit rate on the 411 shots following 3 straight misses. Same x-axis.</p>
+    <svg id="jhist" viewBox="0 0 900 420"></svg>
+    <div class="legend"><span><i style="background:var(--null)"></i>shuffled outcomes</span><span><i style="background:var(--obs)"></i>observed rate</span><span><i class="line"></i>overall FG%, 57.6%</span></div>
+  </div>
+  <p>After three makes he shoots 57.3%. After three misses he shoots 57.2%. Both are his average, and the null is now tight enough, about 1.3 points wide, to call this a precise null result rather than a noisy one.</p>
+  <div class="callout">The null mean after 3 makes is 59.1%, <em>above</em> his 57.6% average, the opposite direction from the single game. Pooling across 335 games adds a second effect: games where he made a lot of shots produce many more "after 3 makes" opportunities, so high-percentage games dominate the pooled numerator. Within-game bias pulls down, between-game selection pulls up, and over a career the second wins. The raw average is the wrong benchmark in both directions. Only the shuffle gets it right for the actual data structure.</div>
+</section>
+
+<section id="league">
+  <h2><span class="k">5 · The league</span>After three makes, players shoot worse than chance predicts</h2>
+  <p>The same test for every player with at least 1,000 attempts across the four seasons: 305 players, 2,000 shuffles each. For each, the statistic is the makes-minus-misses gap, expressed as a z-score against that player's own null.</p>
+  <div class="strip" id="lstrip"></div>
+  <div class="fig" style="margin-top:16px">
+    <p class="t">Where 305 players land against their own null</p>
+    <p class="s">z-score of (rate after 3 makes − rate after 3 misses) relative to the shuffled distribution. If no player had any streak effect, the bars would follow the dashed bell curve.</p>
+    <svg id="zhist" viewBox="0 0 900 320"></svg>
+    <div class="legend"><span><i style="background:var(--obs)"></i>players</span><span><i class="line"></i>expected if no streak effects, N(0, 1)</span></div>
+  </div>
+  <p>The distribution is shifted left. Twenty-nine players are significantly colder after three makes than their shuffles, against about 15 expected by chance. Only eight are significantly hotter, fewer than chance. Across all 305 the post-streak rate averages 1.3 points below the null.</p>
+  <p>This matches what tracking-data studies found: in games, the raw make rate drops after a streak because players take harder shots and defenses adjust. Whatever underlying hot hand exists is more than cancelled by shot selection.</p>
+  <div class="fig">
+    <p class="t">The ten strongest cold hands and ten strongest hot hands</p>
+    <p class="s">Rate after 3 straight makes: observed versus that player's shuffled null. The bar is the gap. Names are feed surnames; the player id disambiguates.</p>
+    <svg id="dots" viewBox="0 0 900 560"></svg>
+    <div class="legend"><span><i style="background:var(--obs)"></i>observed rate after 3 makes</span><span><i style="background:var(--null)"></i>shuffled null mean</span></div>
+  </div>
+  <h3>Maxey is the standout</h3>
+  <div class="kv" id="maxeykv"></div>
+  <p>His post-streak rate is eight points below what shuffling his own games produces, over four standard deviations out. None of 2,000 shuffles got there. Lillard, Leonard and Zubac show the same pattern at smaller magnitude.</p>
+  <h3>Reaves is the best hot-hand candidate, and it is modest</h3>
+  <div class="kv" id="reaveskv"></div>
+  <p>Three points of excess on 331 qualifying shots, p = 0.02. But with 305 players tested, eight hits below p = 0.05 is fewer than the fifteen noise alone would produce, so no individual hot hand survives a multiple-comparison correction yet.</p>
+  <div class="tablewrap"><table id="ptable"></table></div>
+</section>
+
+<section id="next">
+  <h2><span class="k">6 · What this points to</span>The question is now shot selection, not shot making</h2>
+  <p>The league-wide cold effect is consistent with players changing <em>what</em> they shoot after makes rather than losing the ability to make it. The shot table already carries the columns to separate the two:</p>
+  <ul>
+    <li><strong>Shot mix after a streak.</strong> For Maxey, compare share of threes, mean distance, and assisted share on shots after 3 makes against his baseline. If the mix shifts and the per-type rates hold, it is a selection story.</li>
+    <li><strong>Twos versus threes.</strong> Condition on three made twos versus three made threes separately and check whether the next shot's value changes.</li>
+    <li><strong>Game state.</strong> Split by score differential and time remaining, and flag heaves over 35 feet or inside the final three seconds of a period.</li>
+    <li><strong>Attempt props, not make props.</strong> If streaks predict volume or shot type rather than accuracy, the tradeable signal lives in attempts and points lines, live in-game.</li>
+  </ul>
+</section>
+
+<div class="foot">Data: stats.nba.com play-by-play via nba_api. Method: pooled conditional rates with a within-game permutation null, after Miller &amp; Sanjurjo (2018). All figures computed from the project's <code>data/processed</code> tables on 11 Sep 2026.</div>
+</div>
+<div class="tt" id="tt"></div>
+
+<script>
+const D = {"sim":{"p":0.45,"n_shots":20,"rates":{"1":0.42086052706851973,"2":0.356719597147205,"3":0.308569124437003}},"game":{"seq":[true,false,false,true,true,true,true,true,true,true,false,false,false,false,false,false,false,true,true,true,true,false],"qual_makes":[5,6,7,8,9,10,19,20,21],"qual_misses":[3,12,13,14,15,16,17],"obs_makes":0.7777777777777778,"obs_misses":0.2857142857142857,"null_mean":0.4793758531746032,"p":0.04535,"hist":{"bins":[0.0,0.05,0.1,0.15000000000000002,0.2,0.25,0.30000000000000004,0.35000000000000003,0.4,0.45,0.5,0.55,0.6000000000000001,0.65,0.7000000000000001,0.75,0.8,0.8500000000000001,0.9,0.9500000000000001,1.0],"counts":[777,0,0,219,1098,1224,1695,0,3265,0,3898,3138,624,1643,940,670,536,234,3,36],"n":20000},"shot_meta":[{"period":1,"seconds_remaining":675.0,"shot_value":2,"shot_distance":7,"sub_type":"Driving Floating Jump Shot"},{"period":1,"seconds_remaining":576.0,"shot_value":2,"shot_distance":2,"sub_type":"Layup Shot"},{"period":1,"seconds_remaining":556.0,"shot_value":2,"shot_distance":6,"sub_type":"Turnaround Hook Shot"},{"period":1,"seconds_remaining":556.0,"shot_value":2,"shot_distance":6,"sub_type":"Turnaround Hook Shot"},{"period":1,"seconds_remaining":387.0,"shot_value":2,"shot_distance":3,"sub_type":"Driving Layup Shot"},{"period":1,"seconds_remaining":321.0,"shot_value":2,"shot_distance":6,"sub_type":"Turnaround Hook Shot"},{"period":1,"seconds_remaining":287.0,"shot_value":2,"shot_distance":6,"sub_type":"Turnaround Hook Shot"},{"period":2,"seconds_remaining":474.0,"shot_value":2,"shot_distance":3,"sub_type":"Layup Shot"},{"period":2,"seconds_remaining":395.0,"shot_value":2,"shot_distance":4,"sub_type":"Hook Shot"},{"period":2,"seconds_remaining":343.0,"shot_value":3,"shot_distance":26,"sub_type":"Jump Shot"},{"period":2,"seconds_remaining":259.0,"shot_value":2,"shot_distance":9,"sub_type":"Jump Shot"},{"period":2,"seconds_remaining":85.0,"shot_value":2,"shot_distance":6,"sub_type":"Jump Shot"},{"period":2,"seconds_remaining":46.3,"shot_value":2,"shot_distance":4,"sub_type":"Fadeaway Jump Shot"},{"period":2,"seconds_remaining":29.7,"shot_value":2,"shot_distance":5,"sub_type":"Putback Layup Shot"},{"period":3,"seconds_remaining":516.0,"shot_value":2,"shot_distance":20,"sub_type":"Fadeaway Jump Shot"},{"period":3,"seconds_remaining":486.0,"shot_value":3,"shot_distance":27,"sub_type":"Jump Shot"},{"period":3,"seconds_remaining":241.0,"shot_value":2,"shot_distance":2,"sub_type":"Turnaround Hook Shot"},{"period":3,"seconds_remaining":171.0,"shot_value":3,"shot_distance":25,"sub_type":"Jump Shot"},{"period":4,"seconds_remaining":497.0,"shot_value":3,"shot_distance":25,"sub_type":"Jump Shot"},{"period":4,"seconds_remaining":439.0,"shot_value":2,"shot_distance":16,"sub_type":"Jump Shot"},{"period":4,"seconds_remaining":156.0,"shot_value":2,"shot_distance":2,"sub_type":"Layup Shot"},{"period":4,"seconds_remaining":62.0,"shot_value":3,"shot_distance":25,"sub_type":"Jump Shot"}]},"jokic":{"n_shots":5976,"n_games":335,"fg":0.5761378848728246,"obs_makes":0.5725026852846402,"n_makes":931,"null_mean_makes":0.5910202886075157,"null_sd_makes":0.012712433439778627,"p_makes":0.923,"obs_misses":0.5717761557177615,"n_misses":411,"null_mean_misses":0.5548541384450695,"p_misses":0.771,"hist_makes":{"bins":[0.5,0.505,0.51,0.515,0.52,0.525,0.53,0.535,0.54,0.545,0.55,0.555,0.56,0.5650000000000001,0.5700000000000001,0.575,0.5800000000000001,0.585,0.5900000000000001,0.595,0.6,0.605,0.61,0.615,0.62,0.625,0.63,0.635,0.64,0.645,0.65,0.655,0.66,0.665,0.67,0.675,0.68],"counts":[0,0,0,0,0,0,0,0,0,2,11,19,70,163,248,459,625,758,722,686,543,357,200,84,37,11,4,1,0,0,0,0,0,0,0,0]},"hist_misses":{"bins":[0.5,0.505,0.51,0.515,0.52,0.525,0.53,0.535,0.54,0.545,0.55,0.555,0.56,0.5650000000000001,0.5700000000000001,0.575,0.5800000000000001,0.585,0.5900000000000001,0.595,0.6,0.605,0.61,0.615,0.62,0.625,0.63,0.635,0.64,0.645,0.65,0.655,0.66,0.665,0.67,0.675,0.68],"counts":[37,48,86,117,166,194,276,332,374,445,418,429,423,359,304,266,220,151,115,72,63,33,17,6,9,4,1,1,0,0,0,0,0,0,0,0]},"by_season":[{"season":"2022-23","fg":0.6079387186629527,"n":1436},{"season":"2023-24","fg":0.5770392749244713,"n":1655},{"season":"2024-25","fg":0.5618872549019608,"n":1632},{"season":"2025-26","fg":0.5570630486831604,"n":1253}]},"league":{"n_players":305,"hot05":8,"cold95":29,"mean_excess":-0.013135706677088573,"mean_z":-0.3735308263318063,"median_z":-0.38113447823811514,"z_hist":{"bins":[-5.0,-4.5,-4.0,-3.5,-3.0,-2.5,-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0],"counts":[0,1,0,0,5,9,22,43,56,71,36,26,24,10,2,0,0,0]},"top":[{"player_name":"Smith Jr.","player_id":1641733,"n_shots":1032,"fg_pct":0.3983,"n_after_makes":51,"rate_after_makes":0.5294,"null_mean_after_makes":0.3762,"rate_after_misses":0.3986,"diff":0.1308,"null_mean_diff":-0.0292,"z":2.1155,"p_diff":0.013},{"player_name":"Reaves","player_id":1630559,"n_shots":3650,"fg_pct":0.4803,"n_after_makes":331,"rate_after_makes":0.4894,"null_mean_after_makes":0.4588,"rate_after_misses":0.441,"diff":0.0484,"null_mean_diff":-0.0199,"z":2.0472,"p_diff":0.019},{"player_name":"Roddy","player_id":1631223,"n_shots":1013,"fg_pct":0.4195,"n_after_makes":47,"rate_after_makes":0.4894,"null_mean_after_makes":0.3847,"rate_after_misses":0.367,"diff":0.1224,"null_mean_diff":-0.0213,"z":1.911,"p_diff":0.022},{"player_name":"Allen","player_id":1628960,"n_shots":2454,"fg_pct":0.4478,"n_after_makes":168,"rate_after_makes":0.4881,"null_mean_after_makes":0.4392,"rate_after_misses":0.427,"diff":0.0611,"null_mean_diff":-0.0136,"z":1.8538,"p_diff":0.026},{"player_name":"Williams","player_id":1631109,"n_shots":1287,"fg_pct":0.6294,"n_after_makes":214,"rate_after_makes":0.743,"null_mean_after_makes":0.6694,"rate_after_misses":0.5745,"diff":0.1685,"null_mean_diff":0.0514,"z":1.7668,"p_diff":0.033},{"player_name":"Martin","player_id":1628997,"n_shots":1849,"fg_pct":0.4538,"n_after_makes":120,"rate_after_makes":0.55,"null_mean_after_makes":0.4659,"rate_after_misses":0.4675,"diff":0.0825,"null_mean_diff":0.0005,"z":1.6831,"p_diff":0.047},{"player_name":"Davis","player_id":203076,"n_shots":3836,"fg_pct":0.5435,"n_after_makes":514,"rate_after_makes":0.5506,"null_mean_after_makes":0.5376,"rate_after_misses":0.4915,"diff":0.0591,"null_mean_diff":0.0074,"z":1.6813,"p_diff":0.0475},{"player_name":"Jones","player_id":1630200,"n_shots":2186,"fg_pct":0.5059,"n_after_makes":197,"rate_after_makes":0.5279,"null_mean_after_makes":0.5184,"rate_after_misses":0.4611,"diff":0.0668,"null_mean_diff":-0.0023,"z":1.6506,"p_diff":0.044},{"player_name":"White","player_id":1629632,"n_shots":3547,"fg_pct":0.4483,"n_after_makes":224,"rate_after_makes":0.4955,"null_mean_after_makes":0.4457,"rate_after_misses":0.4554,"diff":0.0402,"null_mean_diff":-0.0166,"z":1.6327,"p_diff":0.0505},{"player_name":"Lowry","player_id":200768,"n_shots":1210,"fg_pct":0.4041,"n_after_makes":49,"rate_after_makes":0.3878,"null_mean_after_makes":0.3738,"rate_after_misses":0.3186,"diff":0.0692,"null_mean_diff":-0.0389,"z":1.594,"p_diff":0.0515}],"bottom":[{"player_name":"Maxey","player_id":1630178,"n_shots":5465,"fg_pct":0.456,"n_after_makes":379,"rate_after_makes":0.3615,"null_mean_after_makes":0.4401,"rate_after_misses":0.5064,"diff":-0.1449,"null_mean_diff":-0.0278,"z":-4.245,"p_diff":1.0},{"player_name":"Anthony","player_id":1630175,"n_shots":2202,"fg_pct":0.4332,"n_after_makes":121,"rate_after_makes":0.3223,"null_mean_after_makes":0.4263,"rate_after_misses":0.4522,"diff":-0.1299,"null_mean_diff":0.0035,"z":-2.895,"p_diff":0.9965},{"player_name":"Zubac","player_id":1627826,"n_shots":2639,"fg_pct":0.6275,"n_after_makes":415,"rate_after_makes":0.6072,"null_mean_after_makes":0.6302,"rate_after_misses":0.7263,"diff":-0.1191,"null_mean_diff":0.0171,"z":-2.875,"p_diff":0.996},{"player_name":"Lillard","player_id":203081,"n_shots":3558,"fg_pct":0.4421,"n_after_makes":242,"rate_after_makes":0.376,"null_mean_after_makes":0.4485,"rate_after_misses":0.4582,"diff":-0.0822,"null_mean_diff":0.0099,"z":-2.7432,"p_diff":0.996},{"player_name":"Leonard","player_id":202695,"n_shots":4105,"fg_pct":0.5121,"n_after_makes":418,"rate_after_makes":0.488,"null_mean_after_makes":0.5093,"rate_after_misses":0.586,"diff":-0.0979,"null_mean_diff":-0.0181,"z":-2.5693,"p_diff":0.9925},{"player_name":"Vincent","player_id":1629216,"n_shots":1546,"fg_pct":0.3894,"n_after_makes":53,"rate_after_makes":0.3208,"null_mean_after_makes":0.4403,"rate_after_misses":0.4695,"diff":-0.1488,"null_mean_diff":0.0021,"z":-2.5083,"p_diff":0.992},{"player_name":"Carter","player_id":1628975,"n_shots":1396,"fg_pct":0.3997,"n_after_makes":53,"rate_after_makes":0.3396,"null_mean_after_makes":0.4099,"rate_after_misses":0.4961,"diff":-0.1565,"null_mean_diff":-0.0014,"z":-2.4955,"p_diff":0.9935},{"player_name":"Smith Jr.","player_id":1631095,"n_shots":3376,"fg_pct":0.4369,"n_after_makes":184,"rate_after_makes":0.3641,"null_mean_after_makes":0.4247,"rate_after_misses":0.4704,"diff":-0.1063,"null_mean_diff":-0.0181,"z":-2.477,"p_diff":0.992},{"player_name":"Don\u010di\u0107","player_id":1629029,"n_shots":6191,"fg_pct":0.4763,"n_after_makes":513,"rate_after_makes":0.4308,"null_mean_after_makes":0.4705,"rate_after_misses":0.5088,"diff":-0.078,"null_mean_diff":-0.0172,"z":-2.3879,"p_diff":0.9915},{"player_name":"Banton","player_id":1630625,"n_shots":1150,"fg_pct":0.4,"n_after_makes":38,"rate_after_makes":0.2632,"null_mean_after_makes":0.4169,"rate_after_misses":0.3986,"diff":-0.1355,"null_mean_diff":0.0155,"z":-2.3417,"p_diff":0.993}]},"totals":[{"season":"2022-23","season_type":"Playoffs","games":84,"shots":14651},{"season":"2022-23","season_type":"Regular Season","games":1230,"shots":217219},{"season":"2023-24","season_type":"Playoffs","games":82,"shots":13840},{"season":"2023-24","season_type":"Regular Season","games":1230,"shots":218702},{"season":"2024-25","season_type":"Playoffs","games":84,"shots":14377},{"season":"2024-25","season_type":"Regular Season","games":1225,"shots":218610},{"season":"2025-26","season_type":"Playoffs","games":85,"shots":14473},{"season":"2025-26","season_type":"Regular Season","games":1225,"shots":218261}],"total_shots":930133,"total_games":5245};
+const fmtP = v => (v*100).toFixed(1) + '%';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tt = document.getElementById('tt');
+function hover(el, html){ el.addEventListener('mousemove', e=>{tt.style.display='block';tt.innerHTML=html;tt.style.left=(e.clientX+12)+'px';tt.style.top=(e.clientY-10)+'px';}); el.addEventListener('mouseleave',()=>tt.style.display='none'); }
+const NS='http://www.w3.org/2000/svg';
+function el(tag, attrs, parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+function text(parent,x,y,str,attrs={}){const t=el('text',Object.assign({x,y,fill:'var(--muted)','font-family':'var(--body)','font-size':12},attrs),parent);t.textContent=str;return t;}
+function reduced(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
+
+/* ---------- header strip ---------- */
+document.getElementById('strip').innerHTML = [
+  [D.total_shots.toLocaleString(),'field goal attempts'],
+  [D.total_games.toLocaleString(),'games, 4 seasons'],
+  [D.league.n_players,'players with 1,000+ shots'],
+  [(D.league.mean_excess>0?'+':'')+(D.league.mean_excess*100).toFixed(1)+' pts','avg rate after 3 makes vs null']
+].map(([n,l])=>`<div><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+
+/* ---------- totals table ---------- */
+{
+  const seasons=[...new Set(D.totals.map(r=>r.season))];
+  let h='<tr><th>season</th><th class="n">regular season games</th><th class="n">shots</th><th class="n">playoff games</th><th class="n">shots</th></tr>';
+  for(const s of seasons){const rs=D.totals.find(r=>r.season===s&&r.season_type==='Regular Season'),po=D.totals.find(r=>r.season===s&&r.season_type==='Playoffs');
+    h+=`<tr><td>${s}</td><td class="n">${rs.games.toLocaleString()}</td><td class="n">${rs.shots.toLocaleString()}</td><td class="n">${po.games}</td><td class="n">${po.shots.toLocaleString()}</td></tr>`;}
+  document.getElementById('totals').innerHTML=h;
+}
+
+/* ---------- simulation bar chart ---------- */
+{
+  const svg=document.getElementById('simchart'), W=900,H=300, m={l:60,r:20,t:20,b:40};
+  const ks=[1,2,3], vals=ks.map(k=>D.sim.rates[k]);
+  const x=i=>m.l+(i+0.5)*(W-m.l-m.r)/3, bw=110;
+  const y=v=>m.t+(1-v/0.6)*(H-m.t-m.b);
+  for(const g of [0,.1,.2,.3,.4,.5,.6]){el('line',{x1:m.l,x2:W-m.r,y1:y(g),y2:y(g),stroke:'var(--grid)','stroke-width':1},svg);text(svg,m.l-8,y(g)+4,(g*100)+'%',{'text-anchor':'end'});}
+  ks.forEach((k,i)=>{
+    const r=el('rect',{x:x(i)-bw/2,y:y(vals[i]),width:bw,height:y(0)-y(vals[i]),fill:'var(--obs)',rx:4},svg);
+    el('rect',{x:x(i)-bw/2,y:y(0)-4,width:bw,height:4,fill:'var(--obs)'},svg);
+    text(svg,x(i),y(vals[i])-8,fmtP(vals[i]),{'text-anchor':'middle',fill:'var(--ink)','font-weight':600,'font-size':14});
+    text(svg,x(i),H-m.b+20,`after ${k} straight make${k>1?'s':''}`,{'text-anchor':'middle',fill:'var(--ink-2)'});
+    hover(r,`after ${k} make${k>1?'s':''}: ${fmtP(vals[i])}<br>true rate 45.0% · gap ${((vals[i]-0.45)*100).toFixed(1)} pts`);
+  });
+  el('line',{x1:m.l,x2:W-m.r,y1:y(0.45),y2:y(0.45),stroke:'var(--ink-2)','stroke-width':2,'stroke-dasharray':'6 5'},svg);
+  text(svg,W-m.r,y(0.45)-6,'true 45%',{'text-anchor':'end',fill:'var(--ink-2)','font-weight':500});
+  el('line',{x1:m.l,x2:W-m.r,y1:y(0),y2:y(0),stroke:'var(--axis)'},svg);
+}
+
+/* ---------- shot sequence strip ---------- */
+{
+  const g=D.game, wrap=document.getElementById('seq');
+  const qm=new Set(g.qual_makes), qs=new Set(g.qual_misses);
+  g.seq.forEach((made,i)=>{
+    const meta=g.shot_meta[i];
+    const d=document.createElement('div');d.className='sh'+(qm.has(i)?' q':'')+(qs.has(i)?' qm':'');d.tabIndex=0;
+    const mm=Math.floor(meta.seconds_remaining/60), ss=String(Math.round(meta.seconds_remaining%60)).padStart(2,'0');
+    d.innerHTML=`<div class="tip">#${i+1} · Q${meta.period} ${mm}:${ss} · ${made?'MADE':'missed'} ${meta.shot_value}PT ${meta.sub_type}, ${meta.shot_distance} ft</div><div class="sq${made?' made':''}"></div><div class="idx">${i+1}</div>`;
+    wrap.appendChild(d);
+  });
+  document.getElementById('gamekv').innerHTML=`
+    <b>shots after 2 straight makes</b><span>#${g.qual_makes.map(i=>i+1).join(', ')} → ${g.qual_makes.filter(i=>g.seq[i]).length} of ${g.qual_makes.length} made, <strong>${fmtP(g.obs_makes)}</strong></span>
+    <b>shots after 2 straight misses</b><span>#${g.qual_misses.map(i=>i+1).join(', ')} → ${g.qual_misses.filter(i=>g.seq[i]).length} of ${g.qual_misses.length} made, <strong>${fmtP(g.obs_misses)}</strong></span>
+    <b>game FG%</b><span>${g.seq.filter(Boolean).length} of ${g.seq.length}, ${fmtP(g.seq.filter(Boolean).length/g.seq.length)}</span>`;
+}
+
+/* ---------- generic histogram ---------- */
+function histogram(svg, spec){
+  // spec: {x0,y0,W,H, bins, counts, xmin,xmax, obs, obsLabel, ref, refLabel, title, fmt, hoverLabel}
+  const {x0,y0,W,H,bins,counts}=spec, m={l:60,r:20,t:26,b:34};
+  const xmin=spec.xmin??bins[0], xmax=spec.xmax??bins[bins.length-1];
+  const x=v=>x0+m.l+(v-xmin)/(xmax-xmin)*(W-m.l-m.r);
+  const maxc=Math.max(...counts), y=c=>y0+m.t+(1-c/maxc)*(H-m.t-m.b);
+  const fmt=spec.fmt||fmtP;
+  const g=el('g',{},svg);
+  // y grid: 4 lines
+  for(let i=1;i<=4;i++){const c=maxc*i/4;el('line',{x1:x0+m.l,x2:x0+W-m.r,y1:y(c),y2:y(c),stroke:'var(--grid)'},g);text(g,x0+m.l-8,y(c)+4,Math.round(c).toLocaleString(),{'text-anchor':'end'});}
+  if(spec.title)text(g,x0+m.l,y0+14,spec.title,{fill:'var(--ink)','font-weight':600,'font-size':13});
+  const total=counts.reduce((a,b)=>a+b,0);
+  counts.forEach((c,i)=>{
+    if(!c)return;
+    const bx=x(bins[i]), bw=Math.max(1,x(bins[i+1])-bx-2);
+    const r=el('rect',{x:bx+1,y:y(c),width:bw,height:y(0)-y(c),fill:spec.fill||'var(--null)',rx:2},g);
+    hover(r,`${fmt(bins[i])} to ${fmt(bins[i+1])}<br>${c.toLocaleString()} shuffles (${(c/total*100).toFixed(1)}%)`);
+  });
+  // x ticks
+  const nt=spec.ticks||6;
+  for(let i=0;i<=nt;i++){const v=xmin+(xmax-xmin)*i/nt;text(g,x(v),y0+H-m.b+18,fmt(v),{'text-anchor':'middle'});el('line',{x1:x(v),x2:x(v),y1:y(0),y2:y(0)+4,stroke:'var(--axis)'},g);}
+  el('line',{x1:x0+m.l,x2:x0+W-m.r,y1:y(0),y2:y(0),stroke:'var(--axis)'},g);
+  if(spec.ref!=null){el('line',{x1:x(spec.ref),x2:x(spec.ref),y1:y0+m.t,y2:y(0),stroke:'var(--ink-2)','stroke-width':2,'stroke-dasharray':'6 5'},g);text(g,x(spec.ref)+6,y0+m.t+12,spec.refLabel,{fill:'var(--ink-2)','font-weight':500});}
+  if(spec.nullMean!=null){el('line',{x1:x(spec.nullMean),x2:x(spec.nullMean),y1:y0+m.t,y2:y(0),stroke:'var(--null)','stroke-width':2},g);text(g,x(spec.nullMean)+6,y0+m.t+28,'null mean '+fmt(spec.nullMean),{fill:'var(--null)','font-weight':500});}
+  if(spec.obs!=null){el('line',{x1:x(spec.obs),x2:x(spec.obs),y1:y0+m.t,y2:y(0),stroke:'var(--obs)','stroke-width':3},g);
+    const anchor=spec.obsAnchor||'start';text(g,x(spec.obs)+(anchor==='end'?-6:6),y0+m.t+12+ (spec.obsDy||0),spec.obsLabel,{fill:'var(--obs)','font-weight':600,'text-anchor':anchor});}
+  return {x,y};
+}
+
+/* ---------- one-game null histogram ---------- */
+{
+  const g=D.game;
+  histogram(document.getElementById('gamehist'),{x0:0,y0:0,W:900,H:320,bins:g.hist.bins,counts:g.hist.counts,xmin:0,xmax:1,ticks:10,
+    obs:g.obs_makes,obsLabel:'observed 77.8% · p = '+g.p.toFixed(3),obsAnchor:'end',nullMean:g.null_mean,ref:12/22,refLabel:'',obsDy:0});
+}
+
+/* ---------- Jokić 4-season histograms ---------- */
+{
+  const j=D.jokic, svg=document.getElementById('jhist');
+  histogram(svg,{x0:0,y0:0,W:900,H:210,bins:j.hist_makes.bins,counts:j.hist_makes.counts,xmin:0.50,xmax:0.68,ticks:9,
+    title:`After 3 straight makes · ${j.n_makes} qualifying shots`,obs:j.obs_makes,obsLabel:`observed ${fmtP(j.obs_makes)} · p = ${j.p_makes.toFixed(2)}`,obsAnchor:'end',nullMean:j.null_mean_makes,ref:j.fg,refLabel:''});
+  histogram(svg,{x0:0,y0:210,W:900,H:210,bins:j.hist_misses.bins,counts:j.hist_misses.counts,xmin:0.50,xmax:0.68,ticks:9,
+    title:`After 3 straight misses · ${j.n_misses} qualifying shots`,obs:j.obs_misses,obsLabel:`observed ${fmtP(j.obs_misses)} · p = ${j.p_misses.toFixed(2)}`,nullMean:j.null_mean_misses,ref:j.fg,refLabel:''});
+  document.getElementById('jstrip').innerHTML=[
+    [j.n_shots.toLocaleString(),`shots in ${j.n_games} games`],[fmtP(j.fg),'overall FG%'],
+    [fmtP(j.obs_makes),`after 3 makes · null ${fmtP(j.null_mean_makes)}`],[fmtP(j.obs_misses),`after 3 misses · null ${fmtP(j.null_mean_misses)}`]
+  ].map(([n,l])=>`<div><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+}
+
+/* ---------- league z histogram with normal curve ---------- */
+{
+  const L=D.league, svg=document.getElementById('zhist');
+  const {x,y}=histogram(svg,{x0:0,y0:0,W:900,H:320,bins:L.z_hist.bins,counts:L.z_hist.counts,xmin:-5,xmax:4,ticks:9,fill:'var(--obs)',fmt:v=>(v>0?'+':'')+v.toFixed(1)});
+  // expected counts under N(0,1): n * binwidth * pdf
+  const bw=0.5, pts=[];
+  for(let z=-5;z<=4.001;z+=0.05){const pdf=Math.exp(-z*z/2)/Math.sqrt(2*Math.PI);pts.push(`${x(z).toFixed(1)},${y(L.n_players*bw*pdf).toFixed(1)}`);}
+  el('path',{d:'M'+pts.join(' L'),fill:'none',stroke:'var(--ink-2)','stroke-width':2,'stroke-dasharray':'6 5'},svg);
+  text(svg,x(-1.645)-4,y(0)-6,'p > 0.95 ←',{'text-anchor':'end',fill:'var(--bad)','font-weight':500});
+  text(svg,x(1.645)+4,y(0)-6,'→ p < 0.05',{fill:'var(--good)','font-weight':500});
+  text(svg,x(0),16,'z = 0: exactly what the shuffle predicts',{'text-anchor':'middle',fill:'var(--ink-2)'});
+  document.getElementById('lstrip').innerHTML=[
+    [L.cold95,'significantly cold after 3 makes'],[L.hot05,'significantly hot after 3 makes'],['≈15','expected by chance, either tail'],[L.mean_z.toFixed(2),'mean z across players']
+  ].map(([n,l])=>`<div><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+}
+
+/* ---------- dumbbell plot ---------- */
+{
+  const L=D.league, svg=document.getElementById('dots'), W=900,H=560, m={l:150,r:40,t:30,b:34};
+  const rows=[...L.bottom, null, ...[...L.top].reverse()];
+  const xmin=0.28,xmax=0.76, x=v=>m.l+(v-xmin)/(xmax-xmin)*(W-m.l-m.r);
+  const rh=(H-m.t-m.b)/rows.length;
+  for(const g of [0.3,0.4,0.5,0.6,0.7]){el('line',{x1:x(g),x2:x(g),y1:m.t,y2:H-m.b,stroke:'var(--grid)'},svg);text(svg,x(g),H-m.b+18,fmtP(g),{'text-anchor':'middle'});}
+  text(svg,m.l,m.t-12,'← cold: shoots worse than shuffle after 3 makes',{fill:'var(--bad)','font-weight':500});
+  text(svg,W-m.r,m.t+rh*(L.bottom.length+1)-8,'hot: shoots better than shuffle →',{fill:'var(--good)','font-weight':500,'text-anchor':'end'});
+  rows.forEach((r,i)=>{
+    const cy=m.t+(i+0.5)*rh;
+    if(!r){el('line',{x1:m.l-140,x2:W-m.r,y1:cy,y2:cy,stroke:'var(--axis)','stroke-dasharray':'2 4'},svg);return;}
+    const a=x(r.null_mean_after_makes), b=x(r.rate_after_makes), neg=r.rate_after_makes<r.null_mean_after_makes;
+    el('line',{x1:a,x2:b,y1:cy,y2:cy,stroke:neg?'var(--bad)':'var(--good)','stroke-width':3,'stroke-linecap':'round',opacity:.55},svg);
+    const c1=el('circle',{cx:a,cy,r:5,fill:'var(--null)',stroke:'var(--surface)','stroke-width':2},svg);
+    const c2=el('circle',{cx:b,cy,r:6,fill:'var(--obs)',stroke:'var(--surface)','stroke-width':2},svg);
+    text(svg,m.l-10,cy+4,r.player_name,{'text-anchor':'end',fill:'var(--ink)','font-weight':500,'font-size':13});
+    text(svg,m.l-10,cy+15,'id '+r.player_id,{'text-anchor':'end','font-size':10,'font-family':'var(--mono)'});
+    text(svg,Math.max(a,b)+12,cy+4,((r.rate_after_makes-r.null_mean_after_makes)*100).toFixed(1).replace(/^(-?)/,(m0,s)=>s||'+')+' pts',{fill:'var(--ink-2)','font-size':12});
+    const h=`<b>${r.player_name}</b> (id ${r.player_id})<br>${r.n_shots.toLocaleString()} shots · FG% ${fmtP(r.fg_pct)}<br>after 3 makes: ${fmtP(r.rate_after_makes)} on ${r.n_after_makes} shots<br>shuffled null: ${fmtP(r.null_mean_after_makes)}<br>after 3 misses: ${fmtP(r.rate_after_misses)}<br>z = ${r.z.toFixed(2)}, p = ${r.p_diff.toFixed(3)}`;
+    const hit=el('rect',{x:m.l-140,y:cy-rh/2,width:W-m.r-m.l+140,height:rh,fill:'transparent'},svg);hover(hit,h);
+  });
+}
+
+/* ---------- Maxey / Reaves kv + table ---------- */
+{
+  const L=D.league;
+  const mx=L.bottom.find(r=>r.player_name==='Maxey'), rv=L.top.find(r=>r.player_name==='Reaves');
+  const kv=(r)=>`<b>shots</b><span>${r.n_shots.toLocaleString()} · overall FG% ${fmtP(r.fg_pct)}</span>
+    <b>after 3 makes</b><span><strong>${fmtP(r.rate_after_makes)}</strong> on ${r.n_after_makes} shots · shuffled null ${fmtP(r.null_mean_after_makes)} · <span class="${r.rate_after_makes<r.null_mean_after_makes?'neg':'pos'}">${((r.rate_after_makes-r.null_mean_after_makes)*100).toFixed(1)} pts vs null</span></span>
+    <b>after 3 misses</b><span>${fmtP(r.rate_after_misses)}</span>
+    <b>makes − misses</b><span>${(r.diff*100).toFixed(1)} pts observed · ${(r.null_mean_diff*100).toFixed(1)} pts null · z = ${r.z.toFixed(2)} · p = ${r.p_diff.toFixed(3)}</span>`;
+  document.getElementById('maxeykv').innerHTML=kv(mx);
+  document.getElementById('reaveskv').innerHTML=kv(rv);
+  let h='<tr><th>player</th><th class="n">shots</th><th class="n">FG%</th><th class="n">after 3 makes</th><th class="n">null</th><th class="n">after 3 misses</th><th class="n">diff</th><th class="n">null diff</th><th class="n">z</th><th class="n">p</th></tr>';
+  const row=r=>`<tr><td>${r.player_name} <span style="color:var(--muted);font-size:12px">${r.player_id}</span></td><td class="n">${r.n_shots.toLocaleString()}</td><td class="n">${fmtP(r.fg_pct)}</td><td class="n">${fmtP(r.rate_after_makes)}</td><td class="n">${fmtP(r.null_mean_after_makes)}</td><td class="n">${fmtP(r.rate_after_misses)}</td><td class="n ${r.diff<0?'neg':'pos'}">${(r.diff*100).toFixed(1)}</td><td class="n">${(r.null_mean_diff*100).toFixed(1)}</td><td class="n">${r.z.toFixed(2)}</td><td class="n">${r.p_diff.toFixed(3)}</td></tr>`;
+  h+='<tr><td colspan="10" style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">coldest ten</td></tr>'+L.bottom.map(row).join('');
+  h+='<tr><td colspan="10" style="font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">hottest ten</td></tr>'+L.top.map(row).join('');
+  document.getElementById('ptable').innerHTML=h;
+}
+</script>

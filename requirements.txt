@@ -1,0 +1,4 @@
+nba_api>=1.4
+pandas>=2.0
+pyarrow>=14
+tqdm>=4.66
